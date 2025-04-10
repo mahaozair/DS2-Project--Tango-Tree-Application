@@ -66,8 +66,8 @@ TreeNode* TangoTree::rotateRight(TreeNode* y) { //so this shifts whole auxillary
     
     if (!y || !y->left) return y; // Can't rotate
     
+    TreeNode *T2;
     TreeNode* x = y->left;
-    TreeNode* T2 = x->right;
     
     // Perform rotation
     x->right = y;
@@ -195,7 +195,7 @@ TreeNode* TangoTree::cut(TreeNode* node, int key) {
     return node;
 }
 
-// Joins a main tree with an auxiliary tree
+// // Joins a main tree with an auxiliary tree
 TreeNode* TangoTree::join(TreeNode* mainTree, TreeNode* auxTree) {
     if (!mainTree) return auxTree;
     
@@ -212,6 +212,60 @@ TreeNode* TangoTree::join(TreeNode* mainTree, TreeNode* auxTree) {
     
     return mainTree;
 }
+
+// TreeNode *TangoTree::cut(TreeNode *node, int key)
+// {
+//     if (!node)
+//         return nullptr;
+
+//     node = splay(node, key);
+
+//     if (node->data->relevanceScore != key)
+//         return node;
+
+//     TreeNode *rightSub = node->right;
+//     node->right = nullptr;
+
+//     // ✅ Traverse from root to find actual pointer to this node in the main tree
+//     TreeNode *knownPtr = root;
+//     while (knownPtr && knownPtr->data->relevanceScore != key)
+//     {
+//         if (key < knownPtr->data->relevanceScore)
+//             knownPtr = knownPtr->left;
+//         else
+//             knownPtr = knownPtr->right;
+//     }
+
+//     if (knownPtr && rightSub)
+//     {
+//         auxTrees[knownPtr] = buildAuxTree(rightSub);
+//         std::cout << "[DEBUG] Aux tree stored under: " << knownPtr->data->title << " (" << knownPtr << ")\n";
+//     }
+
+//     return node;
+// }
+
+
+// // Joins a main tree with an auxiliary tree
+// TreeNode *TangoTree::join(TreeNode *mainTree, TreeNode *auxTree)
+// {
+//     if (!mainTree)
+//         return auxTree;
+
+//     mainTree = splay(mainTree, INT_MAX);
+//     mainTree->right = auxTree;
+
+//     // Clear the auxiliary tree if it exists
+//     // auto it = auxTrees.find(mainTree);
+//     // if (it != auxTrees.end())
+//     // {
+//     //     delete it->second;
+//     //     auxTrees.erase(it);
+//     // }
+//     std::cout << "[DEBUG] join(): Checking if we should erase aux tree for " 
+//           << mainTree->data->title << "\n";
+//     return mainTree;
+// }
 
 // Builds an auxiliary tree from a subtree
 AuxNode* TangoTree::buildAuxTree(TreeNode* node) {
@@ -434,5 +488,84 @@ void TangoTree::deleteInternship(int relevanceScore) {
     }
 }
 
-//ek static reference BST banta..
-//Aux tree usse bante based on our searches..
+/////////////////////////////for debugging
+// Helper to print TreeNode with indentation
+void TangoTree::printTreeNode(TreeNode *node, int depth, bool isPreferred)
+{
+    if (!node)
+        return;
+
+    // Print indentation
+    for (int i = 0; i < depth; ++i)
+    {
+        std::cout << "    ";
+    }
+
+    // Print node info
+    std::cout << (isPreferred ? "★ " : "  ")
+              << node->data->title
+              << " (Score: " << node->data->relevanceScore << ")"
+              << " [Depth: " << node->depth << "]";
+
+    // Mark preferred child
+    if (node->preferredChild)
+    {
+        std::cout << " → " << node->preferredChild->data->title;
+    }
+    std::cout << "\n";
+
+    // Recursively print children
+    printTreeNode(node->left, depth + 1, node->preferredChild == node->left);
+    printTreeNode(node->right, depth + 1, node->preferredChild == node->right);
+}
+
+// Helper to print AuxNode with indentation
+void TangoTree::printAuxNode(AuxNode *node, int depth)
+{
+    if (!node)
+        return;
+
+    // Print indentation
+    for (int i = 0; i < depth; ++i)
+    {
+        std::cout << "    ";
+    }
+
+    // Print node info
+    std::cout << "• " << node->data->title
+              << " (Score: " << node->data->relevanceScore << ")"
+              << " [Depth: " << node->depth << "]\n";
+
+    // Recursively print children
+    printAuxNode(node->left, depth + 1);
+    printAuxNode(node->right, depth + 1);
+}
+
+void TangoTree::printTree()
+{
+    std::cout << "\n=== Tango Tree Structure ===\n";
+
+    // Print main tree
+    std::cout << "\nMain Tree (Preferred Paths):\n";
+    // printTreeNode(referenceRoot, 0, true);
+    printTreeNode(root, 0, true);
+    std::cout << "[DEBUG] Total auxiliary trees stored: " << auxTrees.size() << "\n";
+    // Print auxiliary trees
+    std::cout << "\nAuxiliary Trees:\n";
+    if (auxTrees.empty())
+    {
+        std::cout << "No auxiliary trees\n";
+    }
+    else
+    {
+        int auxId = 1;
+        for (const auto &entry : auxTrees)
+        {
+            std::cout << "\nAux Tree #" << auxId++
+                      << " for node [" << entry.first->data->title
+                      << "] at " << entry.first << ":\n"; // Print pointer address
+            printAuxNode(entry.second, 0);
+        }
+    }
+    std::cout << "==========================\n\n";
+}

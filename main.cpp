@@ -31,9 +31,7 @@ int main() {
     recommender.deleteInternship(90);
 
     std::cout <<recommender.search(90);
-
+    recommender.printTree();
     return 0;
 };
-// Note: This code is a simplified version and does not include memory management for the Internship objects.
-// In a real application, you should ensure to delete the Internship objects after use to avoid memory leaks.
-//     }
+

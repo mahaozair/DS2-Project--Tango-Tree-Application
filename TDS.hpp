@@ -13,6 +13,13 @@ struct Internship
     std::string location;
     std::vector<std::string> requiredSkills;
     int relevanceScore; // used as the key in the Tango Tree
+    //these things will be assigned at each insertion
+    bool paid;
+    int years_of_experience;
+    bool hands_on;
+    std::string industry;
+    bool remote;
+    int weekly_hours;
 
     Internship(int _id, std::string _title, std::string _location,
                std::vector<std::string> _skills, int score)
@@ -66,6 +73,10 @@ private:
     void updateAuxTree(TreeNode *preferredNode);
 
 public:
+    //////for debugging may remove later
+    void printTreeNode(TreeNode *node, int depth, bool isPreferred);
+    void printAuxNode(AuxNode *node, int depth);
+    void printTree();
     TangoTree();
     ~TangoTree();
 
