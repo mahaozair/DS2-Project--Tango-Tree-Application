@@ -162,21 +162,21 @@ TreeNode* TangoTree::splay(TreeNode* node, int key) {
     }
 }
 
-// Rotates the tree right around the given node
-TreeNode* TangoTree::rotateRight(TreeNode* y) {
-    TreeNode* x = y->left;
-    y->left = x->right;
-    x->right = y;
-    return x;
-}
+// // Rotates the tree right around the given node
+// TreeNode* TangoTree::rotateRight(TreeNode* y) {
+//     TreeNode* x = y->left;
+//     y->left = x->right;
+//     x->right = y;
+//     return x;
+// }
 
-// Rotates the tree left around the given node
-TreeNode* TangoTree::rotateLeft(TreeNode* x) {
-    TreeNode* y = x->right;
-    x->right = y->left;
-    y->left = x;
-    return y;
-}
+// // Rotates the tree left around the given node
+// TreeNode* TangoTree::rotateLeft(TreeNode* x) {
+//     TreeNode* y = x->right;
+//     x->right = y->left;
+//     y->left = x;
+//     return y;
+// }
 
 // Cuts the tree at the node with the given key
 TreeNode* TangoTree::cut(TreeNode* node, int key) {
@@ -264,73 +264,60 @@ void TangoTree::insertInternship(Internship* intern) {
     clearTree(referenceRoot);
     referenceRoot = buildReferenceTree(interns, 0, interns.size() - 1, 0);
     root = referenceRoot;
-}
+};
 
-// Public search function
-bool TangoTree::search(int relevanceScore) {
-    if (!root) return false;
-    
-    // First search the preferred path
+std::string TangoTree::search(int relevanceScore) {
+    if (!root) return "Not Found!";
+
+    // Search preferred path
     TreeNode* current = root;
-    TreeNode* parent = nullptr;
     std::vector<TreeNode*> path;
-    
+
     while (current) {
         path.push_back(current);
         if (relevanceScore == current->data->relevanceScore) {
-            // Found it - update preferred paths
+            // Update preferred child pointers
             for (size_t i = 0; i + 1 < path.size(); ++i) {
                 path[i]->preferredChild = path[i + 1];
             }
-            
-            // Bring this node to the root of its preferred path
+
             TreeNode* preferredRoot = path[0];
             TreeNode* newRoot = splay(preferredRoot, relevanceScore);
-            
-            if (preferredRoot == root) {
-                root = newRoot;
-            }
-            
-            return true;
+            if (preferredRoot == root) root = newRoot;
+
+            Internship* i = current->data;
+            return "✅ Found: " + i->title + " at " + i->location + " | Score: " + std::to_string(i->relevanceScore);
         }
-        else if (relevanceScore < current->data->relevanceScore) {
-            current = current->left;
-        }
-        else {
-            current = current->right;
-        }
+        current = (relevanceScore < current->data->relevanceScore) ? current->left : current->right;
     }
-    
-    // Not found in preferred path, search auxiliary trees
+
+    // Search auxiliary trees
     for (auto& entry : auxTrees) {
         std::stack<AuxNode*> auxStack;
         auxStack.push(entry.second);
-        
+
         while (!auxStack.empty()) {
-            AuxNode* current = auxStack.top();
+            AuxNode* auxNode = auxStack.top();
             auxStack.pop();
-            
-            if (current->data->relevanceScore == relevanceScore) {
-                // Found in auxiliary tree - promote to preferred path
+
+            if (auxNode->data->relevanceScore == relevanceScore) {
                 TreeNode* preferredRoot = entry.first;
-                preferredRoot = cut(preferredRoot, current->data->relevanceScore);
+                preferredRoot = cut(preferredRoot, relevanceScore);
                 preferredRoot = join(preferredRoot, preferredRoot->right);
-                
-                // Update root if needed
-                if (preferredRoot == root) {
-                    root = preferredRoot;
-                }
-                
-                return true;
+                if (preferredRoot == root) root = preferredRoot;
+
+                Internship* i = auxNode->data;
+                return "✅ Found (aux): " + i->title + " at " + i->location + " | Score: " + std::to_string(i->relevanceScore);
             }
-            
-            if (current->left) auxStack.push(current->left);
-            if (current->right) auxStack.push(current->right);
+
+            if (auxNode->left) auxStack.push(auxNode->left);
+            if (auxNode->right) auxStack.push(auxNode->right);
         }
     }
-    
-    return false;
+
+    return "❌ Not Found!";
 }
+
 
 // Public delete function
 void TangoTree::deleteInternship(int relevanceScore) {

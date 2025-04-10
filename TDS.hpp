@@ -71,7 +71,7 @@ public:
 
     // Public interface
     void insertInternship(Internship *intern);
-    bool search(int relevanceScore);
+    std::string search(int relevanceScore);
     void deleteInternship(int relevanceScore);
 
     // Utility functions
