@@ -1,62 +1,451 @@
-// TangoTree.cpp
 #include "TDS.hpp"
 #include <algorithm>
 #include <iostream>
+#include <stack>
+#include <functional>
+using namespace std;
 
-// Constructor - dummy for now
-TangoTree::TangoTree() {
-    referenceRoot = nullptr;
+TangoTree::TangoTree() : referenceRoot(nullptr), root(nullptr) {}
+
+TangoTree::~TangoTree() {
+    clearTree(referenceRoot);
+    // Note: auxTrees nodes are destroyed when their preferred nodes are destroyed
 }
 
 // Recursively builds a balanced reference tree
-TreeNode* TangoTree::buildReferenceTree(std::vector<Internship*>& interns, int low, int high) {
+TreeNode* TangoTree::buildReferenceTree(std::vector<Internship*>& interns, int low, int high, int depth) {
     if (low > high) return nullptr;
     int mid = (low + high) / 2;
-    TreeNode* root = new TreeNode(interns[mid]);
-    root->left = buildReferenceTree(interns, low, mid - 1);
-    root->right = buildReferenceTree(interns, mid + 1, high);
-    return root;
+    TreeNode* node = new TreeNode(interns[mid], depth);
+    node->left = buildReferenceTree(interns, low, mid - 1, depth + 1);
+    node->right = buildReferenceTree(interns, mid + 1, high, depth + 1);
+    return node;
 }
 
-// Helper to search in the reference tree and store the path
-TreeNode* TangoTree::searchReferenceTree(TreeNode* node, int key, std::vector<TreeNode*>& path) {
-    if (!node) return nullptr;
-    path.push_back(node);
-    if (key == node->data->relevanceScore) return node;
-    else if (key < node->data->relevanceScore) return searchReferenceTree(node->left, key, path);
-    else return searchReferenceTree(node->right, key, path);
+// Stores internships in-order for rebuilding the tree
+void TangoTree::storeInOrder(TreeNode* node, std::vector<Internship*>& interns) {
+    if (!node) return;
+    storeInOrder(node->left, interns);
+    interns.push_back(node->data);
+    storeInOrder(node->right, interns);
 }
 
-// Updates preferred path pointers based on search path
-void TangoTree::updatePreferredPaths(int key) {
-    std::vector<TreeNode*> path;
-    TreeNode* result = searchReferenceTree(referenceRoot, key, path);
-    if (!result) return;
-    for (size_t i = 0; i + 1 < path.size(); ++i) {
-        path[i]->preferredChild = path[i + 1];
+// Clears the tree and deallocates memory
+void TangoTree::clearTree(TreeNode* node) {
+    if (!node) return;
+    clearTree(node->left);
+    clearTree(node->right);
+    
+    // Clear associated aux tree if exists
+    auto it = auxTrees.find(node);
+    if (it != auxTrees.end()) {
+        // Recursively delete aux tree nodes
+        std::stack<AuxNode*> auxStack;
+        auxStack.push(it->second);
+        while (!auxStack.empty()) {
+            AuxNode* current = auxStack.top();
+            auxStack.pop();
+            if (current->left) auxStack.push(current->left);
+            if (current->right) auxStack.push(current->right);
+            delete current;
+        }
+        auxTrees.erase(it);
     }
-    path.back()->preferredChild = nullptr;
+    
+    delete node;
 }
 
-// High-level search function
-void TangoTree::search(int relevanceScore) {
-    std::vector<TreeNode*> path;
-    TreeNode* result = searchReferenceTree(referenceRoot, relevanceScore, path);
-
-    if (result) {
-        std::cout << "Internship found: " << result->data->title << " at " << result->data->location << std::endl;
-        updatePreferredPaths(relevanceScore);
+/**
+ * Performs a right rotation around the given node.
+ * Used for rebalancing the tree during splay operations.
+ * 
+ * @param y The node to rotate around (will become the right child)
+ * @return The new root of this subtree after rotation
+ */
+TreeNode* TangoTree::rotateRight(TreeNode* y) { //so this shifts whole auxillary trees instead of just children 
+    
+    if (!y || !y->left) return y; // Can't rotate
+    
+    TreeNode* x = y->left;
+    TreeNode* T2 = x->right;
+    
+    // Perform rotation
+    x->right = y;
+    y->left = T2;
+    
+    // Update preferred child pointers
+    if (T2) {
+        y->preferredChild = T2;
     } else {
-        std::cout << "Internship with score " << relevanceScore << " not found." << std::endl;
+        y->preferredChild = nullptr;
+    }
+    
+    // Maintain auxiliary tree relationships
+    if (auxTrees.count(y)) {
+        // Transfer auxiliary tree to x if y had one
+        auxTrees[x] = auxTrees[y];
+        auxTrees.erase(y);
+    }
+    
+    return x; // New root
+}
+
+/**
+ * Performs a left rotation around the given node.
+ * Used for rebalancing the tree during splay operations.
+ * 
+ * @param x The node to rotate around (will become the left child)
+ * @return The new root of this subtree after rotation
+ */
+TreeNode* TangoTree::rotateLeft(TreeNode* x) {
+    if (!x || !x->right) return x; // Can't rotate
+    
+    TreeNode* y = x->right;
+    TreeNode* T2 = y->left;
+    
+    // Perform rotation
+    y->left = x;
+    x->right = T2;
+    
+    // Update preferred child pointers
+    if (T2) {
+        x->preferredChild = T2;
+    } else {
+        x->preferredChild = nullptr;
+    }
+    
+    // Maintain auxiliary tree relationships
+    if (auxTrees.count(x)) {
+        // Transfer auxiliary tree to y if x had one
+        auxTrees[y] = auxTrees[x];
+        auxTrees.erase(x);
+    }
+    
+    return y; // New root
+}
+
+// Splay operation for bringing nodes to the root
+TreeNode* TangoTree::splay(TreeNode* node, int key) {
+    if (!node || node->data->relevanceScore == key) return node;
+    
+    if (key < node->data->relevanceScore) {
+        if (!node->left) return node;
+        
+        // Zig-Zig (Left Left)
+        if (key < node->left->data->relevanceScore) {
+            node->left->left = splay(node->left->left, key);
+            node = rotateRight(node);
+        }
+        // Zig-Zag (Left Right)
+        else if (key > node->left->data->relevanceScore) {
+            node->left->right = splay(node->left->right, key);
+            if (node->left->right)
+                node->left = rotateLeft(node->left);
+        }
+        return node->left ? rotateRight(node) : node;
+    }
+    else {
+        if (!node->right) return node;
+        
+        // Zag-Zag (Right Right)
+        if (key > node->right->data->relevanceScore) {
+            node->right->right = splay(node->right->right, key);
+            node = rotateLeft(node);
+        }
+        // Zag-Zig (Right Left)
+        else if (key < node->right->data->relevanceScore) {
+            node->right->left = splay(node->right->left, key);
+            if (node->right->left)
+                node->right = rotateRight(node->right);
+        }
+        return node->right ? rotateLeft(node) : node;
     }
 }
 
-// Placeholder for insert logic
-void TangoTree::insertInternship(Internship* intern) {
-    // TODO: Implement insert logic with rebalancing if necessary
+// Rotates the tree right around the given node
+TreeNode* TangoTree::rotateRight(TreeNode* y) {
+    TreeNode* x = y->left;
+    y->left = x->right;
+    x->right = y;
+    return x;
 }
 
-// Placeholder for delete logic
-void TangoTree::deleteInternship(int relevanceScore) {
-    // TODO: Implement delete logic or lazy deletion
+// Rotates the tree left around the given node
+TreeNode* TangoTree::rotateLeft(TreeNode* x) {
+    TreeNode* y = x->right;
+    x->right = y->left;
+    y->left = x;
+    return y;
 }
+
+// Cuts the tree at the node with the given key
+TreeNode* TangoTree::cut(TreeNode* node, int key) {
+    if (!node) return nullptr;
+    
+    node = splay(node, key);
+    if (node->data->relevanceScore != key) return node;
+    
+    // The right subtree becomes an auxiliary tree
+    TreeNode* aux = node->right;
+    node->right = nullptr;
+    
+    // Build and store the auxiliary tree
+    auxTrees[node] = buildAuxTree(aux);
+    
+    return node;
+}
+
+// Joins a main tree with an auxiliary tree
+TreeNode* TangoTree::join(TreeNode* mainTree, TreeNode* auxTree) {
+    if (!mainTree) return auxTree;
+    
+    // Bring the maximum element to the root
+    mainTree = splay(mainTree, INT_MAX);
+    mainTree->right = auxTree;
+    
+    // Remove the auxiliary tree from our map
+    auto it = auxTrees.find(mainTree);
+    if (it != auxTrees.end()) {
+        delete it->second; // Clean up the old aux tree
+        auxTrees.erase(it);
+    }
+    
+    return mainTree;
+}
+
+// Builds an auxiliary tree from a subtree
+AuxNode* TangoTree::buildAuxTree(TreeNode* node) {
+    if (!node) return nullptr;
+    
+    std::vector<Internship*> interns;
+    storeInOrder(node, interns);
+    
+    // Recursively build a balanced aux tree
+    std::function<AuxNode*(int, int, int)> build = [&](int low, int high, int depth) -> AuxNode* {
+        if (low > high) return nullptr;
+        int mid = (low + high) / 2;
+        AuxNode* auxNode = new AuxNode(interns[mid], depth);
+        auxNode->left = build(low, mid - 1, depth + 1);
+        auxNode->right = build(mid + 1, high, depth + 1);
+        return auxNode;
+    };
+    
+    return build(0, interns.size() - 1, node->depth);
+}
+
+// Updates the auxiliary tree for a preferred node
+void TangoTree::updateAuxTree(TreeNode* preferredNode) {
+    if (!preferredNode) return;
+    
+    auto it = auxTrees.find(preferredNode);
+    if (it != auxTrees.end()) {
+        delete it->second; // Clean up the old aux tree
+    }
+    
+    auxTrees[preferredNode] = buildAuxTree(preferredNode->right);
+    preferredNode->right = nullptr;
+}
+
+// Public insert function
+void TangoTree::insertInternship(Internship* intern) {
+    if (!referenceRoot) {
+        referenceRoot = new TreeNode(intern, 0);
+        root = referenceRoot;
+        return;
+    }
+    
+    // Insert into the reference tree
+    std::vector<Internship*> interns;
+    storeInOrder(referenceRoot, interns);
+    interns.push_back(intern);
+    std::sort(interns.begin(), interns.end(), 
+        [](Internship* a, Internship* b) { return a->relevanceScore < b->relevanceScore; });
+    
+    clearTree(referenceRoot);
+    referenceRoot = buildReferenceTree(interns, 0, interns.size() - 1, 0);
+    root = referenceRoot;
+}
+
+// Public search function
+bool TangoTree::search(int relevanceScore) {
+    if (!root) return false;
+    
+    // First search the preferred path
+    TreeNode* current = root;
+    TreeNode* parent = nullptr;
+    std::vector<TreeNode*> path;
+    
+    while (current) {
+        path.push_back(current);
+        if (relevanceScore == current->data->relevanceScore) {
+            // Found it - update preferred paths
+            for (size_t i = 0; i + 1 < path.size(); ++i) {
+                path[i]->preferredChild = path[i + 1];
+            }
+            
+            // Bring this node to the root of its preferred path
+            TreeNode* preferredRoot = path[0];
+            TreeNode* newRoot = splay(preferredRoot, relevanceScore);
+            
+            if (preferredRoot == root) {
+                root = newRoot;
+            }
+            
+            return true;
+        }
+        else if (relevanceScore < current->data->relevanceScore) {
+            current = current->left;
+        }
+        else {
+            current = current->right;
+        }
+    }
+    
+    // Not found in preferred path, search auxiliary trees
+    for (auto& entry : auxTrees) {
+        std::stack<AuxNode*> auxStack;
+        auxStack.push(entry.second);
+        
+        while (!auxStack.empty()) {
+            AuxNode* current = auxStack.top();
+            auxStack.pop();
+            
+            if (current->data->relevanceScore == relevanceScore) {
+                // Found in auxiliary tree - promote to preferred path
+                TreeNode* preferredRoot = entry.first;
+                preferredRoot = cut(preferredRoot, current->data->relevanceScore);
+                preferredRoot = join(preferredRoot, preferredRoot->right);
+                
+                // Update root if needed
+                if (preferredRoot == root) {
+                    root = preferredRoot;
+                }
+                
+                return true;
+            }
+            
+            if (current->left) auxStack.push(current->left);
+            if (current->right) auxStack.push(current->right);
+        }
+    }
+    
+    return false;
+}
+
+// Public delete function
+void TangoTree::deleteInternship(int relevanceScore) {
+    if (!root) return;
+    
+    // First try to find and remove from preferred path
+    TreeNode* current = root;
+    TreeNode* parent = nullptr;
+    bool found = false;
+    
+    while (current) {
+        if (relevanceScore == current->data->relevanceScore) {
+            found = true;
+            break;
+        }
+        
+        parent = current;
+        if (relevanceScore < current->data->relevanceScore) {
+            current = current->left;
+        }
+        else {
+            current = current->right;
+        }
+    }
+    
+    if (found) {
+        // Case 1: Node has no children
+        if (!current->left && !current->right) {
+            if (!parent) {
+                root = nullptr;
+            }
+            else if (parent->left == current) {
+                parent->left = nullptr;
+            }
+            else {
+                parent->right = nullptr;
+            }
+        }
+        // Case 2: Node has one child
+        else if (!current->left || !current->right) {
+            TreeNode* child = current->left ? current->left : current->right;
+            if (!parent) {
+                root = child;
+            }
+            else if (parent->left == current) {
+                parent->left = child;
+            }
+            else {
+                parent->right = child;
+            }
+        }
+        // Case 3: Node has two children
+        else {
+            // Find in-order successor (leftmost in right subtree)
+            TreeNode* successor = current->right;
+            TreeNode* successorParent = current;
+            
+            while (successor->left) {
+                successorParent = successor;
+                successor = successor->left;
+            }
+            
+            // Replace data with successor's data
+            Internship* temp = current->data;
+            current->data = successor->data;
+            successor->data = temp;
+            
+            // Delete the successor (now guaranteed to have 0 or 1 child)
+            if (successorParent == current) {
+                successorParent->right = successor->right;
+            }
+            else {
+                successorParent->left = successor->right;
+            }
+        }
+        
+        // Rebuild reference tree
+        std::vector<Internship*> interns;
+        storeInOrder(referenceRoot, interns);
+        interns.erase(std::remove_if(interns.begin(), interns.end(),
+            [relevanceScore](Internship* i) { return i->relevanceScore == relevanceScore; }),
+            interns.end());
+        
+        clearTree(referenceRoot);
+        referenceRoot = buildReferenceTree(interns, 0, interns.size() - 1, 0);
+        
+        // Update root if it was deleted
+        if (root && root->data->relevanceScore == relevanceScore) {
+            root = referenceRoot;
+        }
+        
+        return;
+    }
+    
+    // If not found in preferred path, search auxiliary trees
+    for (auto& entry : auxTrees) {
+        std::stack<AuxNode*> auxStack;
+        auxStack.push(entry.second);
+        
+        while (!auxStack.empty()) {
+            AuxNode* current = auxStack.top();
+            auxStack.pop();
+            
+            if (current->data->relevanceScore == relevanceScore) {
+                // Found in auxiliary tree - remove it
+                // (For simplicity, we'll just rebuild the aux tree)
+                updateAuxTree(entry.first);
+                return;
+            }
+            
+            if (current->left) auxStack.push(current->left);
+            if (current->right) auxStack.push(current->right);
+        }
+    }
+}
+
+//ek static reference BST banta..
+//Aux tree usse bante based on our searches..
