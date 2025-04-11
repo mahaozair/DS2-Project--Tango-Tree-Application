@@ -8,6 +8,9 @@
 
 using namespace std;
 
+
+
+
 TangoTree::TangoTree() : referenceRoot(nullptr), root(nullptr) {}
 
 TangoTree::~TangoTree() {
@@ -169,13 +172,13 @@ TreeNode* TangoTree::insert(TreeNode* node, Internship* intern, int depth) {
     return node;
 }
 
-TreeNode* TangoTree::remove(TreeNode* node, int relevanceScore) {
+TreeNode* TangoTree::remove(TreeNode* node, int relevanceScore , std::string title) {
     if (!node) return node;
 
     if (relevanceScore < node->key) {
-        node->left = remove(node->left, relevanceScore);
+        node->left = remove(node->left, relevanceScore, title);
     } else if (relevanceScore > node->key) {
-        node->right = remove(node->right, relevanceScore);
+        node->right = remove(node->right, relevanceScore, title);
     } else {
         // Found the node with the matching relevance score
         // If this is the last internship in this node, remove the node
@@ -203,10 +206,15 @@ TreeNode* TangoTree::remove(TreeNode* node, int relevanceScore) {
             node->data = temp->data;
             
             // Delete the successor
-            node->right = remove(node->right, temp->key);
+            node->right = remove(node->right, temp->key, title);
         } else {
             // Remove just one internship (last one for simplicity)
-            node->data.pop_back();
+            for(int i = 0; i < node->data.size(); ++i) {
+                if (node->data[i]->title == title) {
+                    node->data.erase(node->data.begin() + i);
+                    break;
+                }
+            }
         }
     }
 
@@ -440,7 +448,7 @@ std::vector<Internship*> TangoTree::search(int relevanceScore) {
     return result; // Empty vector if not found
 }
 
-void TangoTree::deleteInternship(int relevanceScore) {
+void TangoTree::deleteInternship(int relevanceScore, std::string title) {
     if (!root) return;
     
     // First, update the preferred path for this deletion
@@ -450,7 +458,7 @@ void TangoTree::deleteInternship(int relevanceScore) {
     root = splay(root, relevanceScore);
     
     // Now remove the node
-    root = remove(root, relevanceScore);
+    root = remove(root, relevanceScore, title);
     
     // Update reference root
     referenceRoot = root;

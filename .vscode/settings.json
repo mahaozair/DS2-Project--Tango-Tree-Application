@@ -54,6 +54,8 @@
         "variant": "cpp",
         "iomanip": "cpp",
         "sstream": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "chrono": "cpp",
+        "ratio": "cpp"
     }
 }

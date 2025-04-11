@@ -4,19 +4,32 @@
 #include <unordered_map>
 #include <string>
 
-class Internship {
-public:
-    int id;
-    int relevanceScore;
-    std::string title;
-    std::string location;
-    std::vector<std::string> requiredSkills;
+
+// struct UserPreference {
+//     std::string title;
+//     std::string location;
+//     std::vector<std::string> requiredSkills;
     
-    Internship(int id, std::string title, std::string location,
-               std::vector<std::string> skills, int score)
-        : id(id), title(title), location(location),
-          requiredSkills(skills), relevanceScore(score) {}
-};
+//     UserPreference(int score, std::string t, std::string loc, std::vector<std::string> skills)
+//         : title(t), location(loc), requiredSkills(skills) {}
+// };
+class Internship {
+    public:
+        int id;
+        int relevanceScore;
+        std::string title;
+        std::string location;
+        std::vector<std::string> requiredSkills;
+        bool paid;
+        int years_of_experience;
+        bool hands_on;
+        std::string industry;
+        int weekly_hours;
+        Internship(int id, std::string title, std::string location,
+                   std::vector<std::string> skills, int score)
+            : id(id), title(title), location(location),
+              requiredSkills(skills), relevanceScore(score) {}
+    };
 
 class TreeNode {
 public:
@@ -62,7 +75,7 @@ private:
     TreeNode* rotateLeft(TreeNode* x);
     TreeNode* splay(TreeNode* node, int key);
     TreeNode* insert(TreeNode* node, Internship* intern, int depth);
-    TreeNode* remove(TreeNode* node, int relevanceScore);
+    TreeNode* remove(TreeNode* node, int relevanceScore, std::string title);
     
     // Auxiliary tree management
     void storeInOrder(TreeNode* node, std::vector<Internship*>& interns);
@@ -78,7 +91,7 @@ public:
     
     // Public functions
     void insertInternship(Internship* intern);
-    void deleteInternship(int relevanceScore);
+    void deleteInternship(int relevanceScore, std::string title);
     std::vector<Internship*> search(int relevanceScore); // Return vector of internships
     void printTree();
     void printTreeNode(TreeNode* node, int depth, bool isPreferred);
