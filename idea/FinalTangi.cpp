@@ -1,4 +1,4 @@
-#include "FinalTang.hpp"
+#include "FinalTangi.hpp"
 #include <iostream>
 #include <stack>
 #include <algorithm>
@@ -182,12 +182,12 @@ TreeNode* TangoTree::insert(TreeNode* node, Internship* intern, int depth) {
     if (!node) return new TreeNode(intern, depth);
 
     // If we found a node with the same relevance score, add the internship to it
-    if (intern->relevanceScore == node->key) {
+    if (intern->CategoryId == node->key) {
         node->data.push_back(intern);
         return node;
     }
     
-    if (intern->relevanceScore < node->key) {
+    if (intern->CategoryId < node->key) {
         node->left = insert(node->left, intern, depth + 1);
     } else {
         node->right = insert(node->right, intern, depth + 1);
@@ -200,21 +200,21 @@ TreeNode* TangoTree::insert(TreeNode* node, Internship* intern, int depth) {
     int balance = balanceFactor(node);
 
     // Left heavy (left-left)
-    if (balance > 1 && intern->relevanceScore < node->left->key)
+    if (balance > 1 && intern->CategoryId < node->left->key)
         return rotateRight(node);
 
     // Right heavy (right-right)
-    if (balance < -1 && intern->relevanceScore > node->right->key)
+    if (balance < -1 && intern->CategoryId > node->right->key)
         return rotateLeft(node);
 
     // Left-Right (left-heavy right child)
-    if (balance > 1 && intern->relevanceScore > node->left->key) {
+    if (balance > 1 && intern->CategoryId > node->left->key) {
         node->left = rotateLeft(node->left);
         return rotateRight(node);
     }
 
     // Right-Left (right-heavy left child)
-    if (balance < -1 && intern->relevanceScore < node->right->key) {
+    if (balance < -1 && intern->CategoryId < node->right->key) {
         node->right = rotateRight(node->right);
         return rotateLeft(node);
     }
@@ -222,13 +222,13 @@ TreeNode* TangoTree::insert(TreeNode* node, Internship* intern, int depth) {
     return node;
 }
 
-TreeNode* TangoTree::remove(TreeNode* node, int relevanceScore) {
+TreeNode* TangoTree::remove(TreeNode* node, int CategoryId) {
     if (!node) return node;
 
-    if (relevanceScore < node->key) {
-        node->left = remove(node->left, relevanceScore);
-    } else if (relevanceScore > node->key) {
-        node->right = remove(node->right, relevanceScore);
+    if (CategoryId < node->key) {
+        node->left = remove(node->left, CategoryId);
+    } else if (CategoryId > node->key) {
+        node->right = remove(node->right, CategoryId);
     } else {
         // Found the node with the matching relevance score
         // If this is the last internship in this node, remove the node
@@ -333,7 +333,7 @@ AuxNode* TangoTree::buildAuxTree(TreeNode* node) {
     // Group internships by relevance score
     std::map<int, std::vector<Internship*>> scoreGroups;
     for (Internship* intern : interns) {
-        scoreGroups[intern->relevanceScore].push_back(intern);
+        scoreGroups[intern->CategoryId].push_back(intern);
     }
     
     // Create a vector of unique scores ordered
@@ -446,21 +446,21 @@ void TangoTree::insertInternship(Internship* intern) {
     root = referenceRoot;
     
     // Update preferred path to this inserted node
-    updatePreferredPath(root, intern->relevanceScore);
+    updatePreferredPath(root, intern->CategoryId);
 }
 
-std::vector<Internship*> TangoTree::search(int relevanceScore) {
+std::vector<Internship*> TangoTree::search(int CategoryId) {
     std::vector<Internship*> result;
     if (!root) return result;
     
     // First, update the preferred path for this search
-    updatePreferredPath(root, relevanceScore);
+    updatePreferredPath(root, CategoryId);
     
     // Now splay the tree to bring the searched node (or closest node) to the top
-    root = splay(root, relevanceScore);
+    root = splay(root, CategoryId);
     
     // If we found the exact node
-    if (root && root->key == relevanceScore) {
+    if (root && root->key == CategoryId) {
         return root->data;
     }
     
@@ -475,15 +475,15 @@ std::vector<Internship*> TangoTree::search(int relevanceScore) {
             AuxNode* auxCurrent = auxRoot;
             
             while (auxCurrent) {
-                if (relevanceScore == auxCurrent->key) {
+                if (CategoryId == auxCurrent->key) {
                     return auxCurrent->data;
                 }
-                auxCurrent = (relevanceScore < auxCurrent->key) ? auxCurrent->left : auxCurrent->right;
+                auxCurrent = (CategoryId < auxCurrent->key) ? auxCurrent->left : auxCurrent->right;
             }
         }
         
         // Continue down the preferred path
-        if (relevanceScore < current->key) {
+        if (CategoryId < current->key) {
             current = current->left;
         } else {
             current = current->right;
@@ -493,17 +493,17 @@ std::vector<Internship*> TangoTree::search(int relevanceScore) {
     return result; // Empty vector if not found
 }
 
-void TangoTree::deleteInternship(int relevanceScore) {
+void TangoTree::deleteInternship(int CategoryId) {
     if (!root) return;
     
     // First, update the preferred path for this deletion
-    updatePreferredPath(root, relevanceScore);
+    updatePreferredPath(root, CategoryId);
     
     // Splay the tree to bring the target node (or closest) to the top
-    root = splay(root, relevanceScore);
+    root = splay(root, CategoryId);
     
     // Now remove the node
-    root = remove(root, relevanceScore);
+    root = remove(root, CategoryId);
     
     // Update reference root
     referenceRoot = root;
