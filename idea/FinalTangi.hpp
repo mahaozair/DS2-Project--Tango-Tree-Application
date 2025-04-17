@@ -4,43 +4,46 @@
 #include <unordered_map>
 #include <string>
 
-struct UserPreferences {
+class UserPreferences {
+    private:
     bool preferRemote;
     bool requirePaid;
     std::string preferredIndustry;
     int maxExperience;
     bool preferHandsOn;
     int maxWeeklyHours;
-    
-    UserPreferences(bool remote = false, bool paid = true,
-                   std::string industry = "", int maxExp = 0,
-                   bool handsOn = false, int maxHrs = 40)
-        : preferRemote(remote), 
-          requirePaid(paid), 
-          preferredIndustry(industry), 
-          maxExperience(maxExp),
-          preferHandsOn(handsOn), 
-          maxWeeklyHours(maxHrs) {}
+    std::string preferredLocation;
+    int CategoryId;
+    std::vector<std::string> & allIndustries;
+    std::vector<std::string> & allLocations;
+    public:
+    UserPreferences(bool remote , bool paid ,
+                   std::string industry , int maxExp,
+                   bool handsOn , int maxHrs , std::vector<std::string>&  allIndustries , std::vector<std::string>&  allLocations, std::string prefLoc);
+        
+    int CalculateCategoryId();
 };
 class Internship {
     private:
-        int CalculateCategoryId();
     public:
-        int CategoryId;
-        std::string title;
-        int location;
-        // std::vector<std::string> requiredSkills;
-        bool remote;
-        bool paid;
-        int industry;
-        int yearsExperience;
-        bool handsOn;
-        int weeklyHours;
-        
+    int CategoryId;
+    std::string title;
+    int location;
+    // std::vector<std::string> requiredSkills;
+    bool remote;
+    bool paid;
+    int industry;
+    int yearsExperience;
+    bool handsOn;
+    int weeklyHours;
+    std::vector<std::string>& allIndustries;
+    std::vector<std::string>& allLocations;
+    
+        int CalculateCategoryId();
         Internship(std::string title, std::string location,
-                   bool remote, bool paid = true,
+                   bool remote, bool paid,
                    std::string industry, int yearsExp ,
-                   bool handsOn, int weeklyHrs);
+                   bool handsOn, int weeklyHrs, std::vector<std::string>&  allIndustries, std::vector<std::string>&  allLocations);
            
     };
 
@@ -88,7 +91,7 @@ private:
     TreeNode* rotateLeft(TreeNode* x);
     TreeNode* splay(TreeNode* node, int key);
     TreeNode* insert(TreeNode* node, Internship* intern, int depth);
-    TreeNode* remove(TreeNode* node, int relevanceScore);
+    TreeNode* remove(TreeNode* node, std::string title ,int CategoryId);
     
     // Auxiliary tree management
     void storeInOrder(TreeNode* node, std::vector<Internship*>& interns);
@@ -104,7 +107,7 @@ public:
     
     // Public functions
     void insertInternship(Internship* intern);
-    void deleteInternship(int CategoryId);
+    void deleteInternship(int CategoryId, std::string title);
     std::vector<Internship*> search(int CategoryID); // Return vector of internships
     void printTree();
     void printTreeNode(TreeNode* node, int depth, bool isPreferred);

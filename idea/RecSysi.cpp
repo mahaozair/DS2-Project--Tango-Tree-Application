@@ -1,257 +1,102 @@
-#include "FinalTang.hpp"
+#include "FinalTangi.hpp"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
 
-class RecommendationEngine {
-private:
-    TangoTree masterTree;
-    std::vector<std::string> allIndustries;
-    std::vector<std::string> allLocations;
+std::vector<std::string> allIndustries = {};
+std::vector<std::string> allLocations = {};
+// Function to read internships from a CSV file
+std::vector<Internship*> readInternshipsFromCSV(const std::string& filename, 
+                                                std::vector<std::string>& allIndustries, 
+                                                std::vector<std::string>& allLocations) {
+    std::vector<Internship*> internships;
+    std::ifstream file(filename);
     
-public:
-    RecommendationEngine() {
-        // Initialize known industries and locations
-        allIndustries = {"Tech", "Finance", "Healthcare", "Education", "Marketing"};
-        allLocations = {"Lahore", "Karachi", "Islamabad"};
+    // Define industry and location lists
+    
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file " << filename << std::endl;
+        return internships;
     }
     
-    void addInternship(Internship* intern) {
-        // Compute feature vector once
+    std::string line;
+    // Skip header line
+    std::getline(file, line);
+    
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string title, location, industry;
+        std::string remoteStr, paidStr, yearsExpStr, handsOnStr, weeklyHrsStr;
         
+        // Parse CSV line
+        std::getline(ss, title, ',');
+        std::getline(ss, location, ',');
+        std::getline(ss, remoteStr, ',');
+        std::getline(ss, paidStr, ',');
+        std::getline(ss, industry, ',');
+        std::getline(ss, yearsExpStr, ',');
+        std::getline(ss, handsOnStr, ',');
+        std::getline(ss, weeklyHrsStr, ',');
         
-        // Add to master tree
-        masterTree.insertInternship(intern);
+        // Convert string values to appropriate types
+        bool remote = (remoteStr == "1" || remoteStr == "true");
+        bool paid = (paidStr == "1" || paidStr == "true");
+        int yearsExp = std::stoi(yearsExpStr);
+        bool handsOn = (handsOnStr == "1" || handsOnStr == "true");
+        int weeklyHrs = std::stoi(weeklyHrsStr);
+        
+        // Create and add the internship
+        Internship* intern = new Internship(title, location, remote, paid, industry, 
+                                           yearsExp, handsOn, weeklyHrs, 
+                                           allIndustries, allLocations);
+        internships.push_back(intern);
     }
     
-    std::vector<Internship*> getRecommendations(const UserPreferences& prefs) {
-        // Convert user preferences to weights
-        UserWeights weights = convertPreferencesToWeights(prefs);
-        
-        // Get candidate internships from the Tango Tree
-        std::vector<Internship*> candidates;
-        collectCandidateInternships(candidates);
-        
-        // Score candidates using pre-computed features
-        std::vector<std::pair<float, Internship*>> scoredCandidates;
-        for (Internship* intern : candidates) {
-            float score = calculateUniversalScore(intern, weights);
-            scoredCandidates.push_back({score, intern});
-        }
-        
-        // Sort by score
-        std::sort(scoredCandidates.begin(), scoredCandidates.end(),
-                 [](const auto& a, const auto& b) { return a.first > b.first; });
-        
-        // Return top recommendations
-        std::vector<Internship*> recommendations;
-        int maxResults = 10;
-        for (int i = 0; i < std::min(maxResults, (int)scoredCandidates.size()); i++) {
-            recommendations.push_back(scoredCandidates[i].second);
-        }
-        
-        return recommendations;
+    file.close();
+    return internships;
+}
+
+int main() {
+    // Read internships from CSV file
+    std::string csvFilename = "C:\\Users\\haris\\project_ds2\\DS2-Project--Tango-Tree-Application\\idea\\internship.csv";
+    std::vector<Internship*> internships = readInternshipsFromCSV(csvFilename, allIndustries, allLocations);
+    
+    // Check if internships were loaded successfully
+    if (internships.empty()) {
+        std::cerr << "No internships loaded from CSV file." << std::endl;
+        return 1;
     }
     
-    UserWeights convertPreferencesToWeights(const UserPreferences& prefs) {
-        UserWeights weights;
-        
-        // Binary feature weights
-        weights.remoteImportance = prefs.preferRemote ? 1.0f : 0.0f;
-        weights.paidImportance = prefs.requirePaid ? 1.0f : 0.0f;
-        weights.handsOnImportance = prefs.preferHandsOn ? 1.0f : 0.0f;
-        
-        // Numerical feature weights
-        weights.desiredExperience = prefs.maxExperience;
-        weights.experienceImportance = 0.8f;  // High importance
-        weights.maxHours = prefs.maxWeeklyHours;
-        weights.hoursImportance = 0.6f;  // Medium importance
-        
-        // Categorical preferences
-        weights.industryPreference.resize(allIndustries.size(), 0.0f);
-        for (size_t i = 0; i < allIndustries.size(); i++) {
-            if (prefs.preferredIndustry == allIndustries[i]) {
-                weights.industryPreference[i] = 1.0f;
-                break;
-            }
-        }
-        weights.industryImportance = 0.9f;  // High importance
-        
-        // Similar for location preferences
-        // ...
-        
-        return weights;
+    std::cout << "Loaded " << internships.size() << " internships from CSV file." << std::endl;
+    
+    // Initialize the TangoTree
+    TangoTree tree;
+    for (Internship* intern : internships) {
+        tree.insertInternship(intern);
     }
     
-    float calculateUniversalScore(const Internship* intern, const UserWeights& weights) {
-        float score = intern->relevanceScore;  // Start with base score
-        
-        // Apply binary feature weights
-        if (intern->features.isRemote == 1) 
-        score += 10 * weights.remoteImportance;
-        if (intern->features.isPaid == 1) 
-        score += 10 * weights.paidImportance;
-        if (intern->features.isHandsOn == 1) 
-        score += 10 * weights.handsOnImportance;
-        
-        // Apply numerical feature weights
-        float expDiff = fabs(intern->features.experienceLevel - weights.desiredExperience/10.0f);
-        score -= 10 * expDiff * weights.experienceImportance;  // Penalty for experience mismatch
-        
-        if (intern->features.hoursCommitment <= weights.maxHours/40.0f)
-        score += 10 * weights.hoursImportance;
-        
-        // Apply categorical preferences using dot product
-        float industryMatch = 0;
-        for (size_t i = 0; i < intern->features.industryVector.size(); i++) {
-            industryMatch += intern->features.industryVector[i] * weights.industryPreference[i];
-        }
-        score += 20 * industryMatch * weights.industryImportance;
-        
-        float locationMatch = 0;
-        for (size_t i = 0; i < intern->features.locationVector.size(); i++) {
-            locationMatch += intern->features.locationVector[i] * weights.locationPreference[i];
-        }
-        score += 15 * locationMatch * weights.locationImportance;
-        
-        return score;
+    // Print the tree structure
+    // tree.printTree();
+    for(int i = 0; i < allIndustries.size(); i++) {
+        std::cout << i << " " << allIndustries[i] << std::endl;
     }
     
-    void collectCandidates(std::vector<Internship*>& candidates) {
-        // Use the efficient Tango Tree to collect candidates
-        // This could range from searching for high relevance scores
-        // to more sophisticated range queries
-        for (int score = 100; score >= 70; score -= 5) {
-            std::vector<Internship*> results = masterTree.search(score);
-            candidates.insert(candidates.end(), results.begin(), results.end());
-            if (candidates.size() >= 100) break; // Enough candidates
-        }
-    }
-
-
+    // Example: Search for a specific category ID
+    int categoryId = internships[0]->CategoryId;
+    std::cout << "\nSearching for CategoryId: " << categoryId << std::endl;
+    std::vector<Internship*> results = tree.search(categoryId);
     
-};
-    // class RecommendationSystem {
-        //     private:
-        //         TangoTree masterTree;  // Single tree for all internships
-        
-//     public:
-//         // User preferences are passed as parameters, not built into separate trees
-//         std::vector<Internship*> getPersonalizedRecommendations(
-//             const UserPreferences& prefs, int maxResults = 10) {
-            
-//             // First retrieve potential matches using the efficient Tango Tree search
-//             std::vector<Internship*> candidates;
-//             collectCandidates(candidates);
-            
-//             // Then apply personalization without tree restructuring
-//             std::vector<std::pair<int, Internship*>> scoredCandidates;
-//             for (Internship* intern : candidates) {
-//                 if (meetsHardRequirements(intern, prefs)) {
-//                     int personalizedScore = calculatePersonalizedScore(intern, prefs);
-//                     scoredCandidates.push_back({personalizedScore, intern});
-//                 }
-//             }
-            
-//             // Sort and return top results
-//             std::sort(scoredCandidates.begin(), scoredCandidates.end(),
-//                      [](const auto& a, const auto& b) { return a.first > b.first; });
-            
-//             std::vector<Internship*> recommendations;
-//             int count = std::min(maxResults, (int)scoredCandidates.size());
-//             for (int i = 0; i < count; i++) {
-//                 recommendations.push_back(scoredCandidates[i].second);
-//             }
-            
-//             return recommendations;
-//         }
-        
-//         // Helper method to collect candidate internships efficiently
-        // void collectCandidates(std::vector<Internship*>& candidates) {
-        //     // Use the efficient Tango Tree to collect candidates
-        //     // This could range from searching for high relevance scores
-        //     // to more sophisticated range queries
-        //     for (int score = 100; score >= 70; score -= 5) {
-        //         std::vector<Internship*> results = masterTree.search(score);
-        //         candidates.insert(candidates.end(), results.begin(), results.end());
-        //         if (candidates.size() >= 100) break; // Enough candidates
-        //     }
-        // }
-
-//         std::vector<Internship*> getPersonalizedRecommendations(
-//             const UserPreferences& prefs, int maxResults = 10) {
-            
-//             // 1. Retrieve potential matches efficiently from the Tango Tree
-//             std::vector<Internship*> candidates;
-//             collectCandidates(candidates);
-            
-//             // 2. Apply personalization filters
-//             std::vector<std::pair<int, Internship*>> scoredCandidates;
-//             for (Internship* intern : candidates) {
-//                 // Check "hard" requirements (must-haves)
-//                 if (meetsHardRequirements(intern, prefs)) {
-//                     // Calculate personalized score based on preferences
-//                     int personalizedScore = calculatePersonalizedScore(intern, prefs);
-//                     scoredCandidates.push_back({personalizedScore, intern});
-//                 }
-//             }
-            
-//             // 3. Sort by personalized score
-           
-            
-//             // 4. Return top results
-//             std::vector<Internship*> recommendations;
-//             for (int i = 0; i < std::min(maxResults, (int)scoredCandidates.size()); i++) {
-//                 recommendations.push_back(scoredCandidates[i].second);
-//             }
-            
-//             return recommendations;
-//         }
-
-//         void collectCandidates(std::vector<Internship*>& candidates) {
-//             // Start with high-relevance scores and work downward
-//             for (int score = 100; score >= 70; score -= 5) {
-//                 // Use the Tango Tree's efficient search mechanism
-//                 // This benefits from preferred paths and aux trees
-//                 std::vector<Internship*> results = masterTree.search(score);
-//                 candidates.insert(candidates.end(), results.begin(), results.end());
-                
-//                 // Exit early if we have enough candidates to filter
-//                 if (candidates.size() >= 100) break;
-//             }
-//         }
-
-//         bool meetsHardRequirements(Internship* intern, const UserPreferences& prefs) {
-//             // Example hard requirements that must be met
-//             if (prefs.requirePaid && !intern->paid) return false;
-//             if (prefs.preferRemote && !intern->remote) return false;
-//             if (prefs.maxExperience < intern->yearsExperience) return false;
-            
-//             return true;
-//         }
-
-//         int calculatePersonalizedScore(Internship* intern, const UserPreferences& prefs) {
-//             int baseScore = intern->relevanceScore; // Start with base relevance
-            
-//             // Apply preference-based adjustments
-//             if (prefs.requireRemote && intern->remote) baseScore += 20;
-//             if (prefs.requirePaid && intern->paid) baseScore += 15;
-            
-//             // Industry match bonus (exact or related)
-//             if (prefs.preferredIndustry == intern->industry) {
-//                 baseScore += 25; // Exact match
-//             } else if (isRelatedIndustry(prefs.preferredIndustry, intern->industry)) {
-//                 baseScore += 10; // Related industry
-//             }
-            
-//             // Experience level matching
-//             int expDiff = abs(prefs.preferredExperience - intern->yearsExperience);
-//             baseScore -= (expDiff * 5); // Penalty for experience mismatch
-            
-//             // Location preference
-//             if (prefs.preferredLocation == intern->location) baseScore += 15;
-            
-//             // Weekly hours match
-//             if (intern->weeklyHours <= prefs.maxWeeklyHours) baseScore += 10;
-            
-//             return baseScore;
-//         }
-        
-//     };
+    std::cout << "Found " << results.size() << " internships:" << std::endl;
+    for (Internship* intern : results) {
+        std::cout << "- " << intern->title << " (Industry: " << allIndustries[intern->industry] << ")" << std::endl;
+    }
+    
+    // Clean up
+    for (Internship* intern : internships) {
+        delete intern;
+    }
+    
+    return 0;
+}

@@ -10,9 +10,11 @@ using namespace std;
 
 
 Internship :: Internship(std::string title, std::string location,
-   bool remote = false, bool paid = true,
-   std::string industry = "", int yearsExp = 0,
-   bool handsOn = false, int weeklyHrs = 4):
+   bool remote, bool paid,
+   std::string industry, int yearsExp,
+   bool handsOn, int weeklyHrs, std::vector<std::string>& allIndustries, std::vector<std::string>& allLocations)
+: allIndustries(allIndustries),
+allLocations(allLocations),
 title(title), 
 remote(remote), 
 paid(paid), 
@@ -29,8 +31,12 @@ weeklyHours(weeklyHrs) {
      else if(weeklyHrs > 30 && weeklyHrs <= 40) 
           this->weeklyHours = 4;
     
-    std::vector<std::string> allIndustries = {"Tech", "Finance", "Healthcare", "Education", "Marketing"};
-    std::vector<std::string> allLocations = {"Lahore", "Karachi", "Islamabad"};
+    if (std::find(allLocations.begin(), allLocations.end(), location) == allLocations.end()) {
+        allLocations.push_back(location);
+    }
+    if (std::find(allIndustries.begin(), allIndustries.end(), industry) == allIndustries.end()) {
+        allIndustries.push_back(industry);
+    }
 
     for (int i = 0; i < allIndustries.size(); i++) {
         if (industry == allIndustries[i]) {
@@ -47,6 +53,60 @@ weeklyHours(weeklyHrs) {
     this->CategoryId = CalculateCategoryId(); 
 }
 
+UserPreferences::UserPreferences(bool remote, bool paid,
+    std::string industry, int maxExp,
+    bool handsOn, int maxHrs, std::vector<std::string>& allIndustries, 
+    std::vector<std::string>& allLocations, std::string prefLoc)
+    : allIndustries(allIndustries),
+      allLocations(allLocations),
+      preferRemote(remote), 
+      requirePaid(paid), 
+      preferredIndustry(industry), 
+      maxExperience(maxExp),
+      preferHandsOn(handsOn), 
+      maxWeeklyHours(maxHrs),
+      preferredLocation(prefLoc) {
+    CategoryId = CalculateCategoryId();
+}
+
+int UserPreferences :: CalculateCategoryId() {
+    int industry = 0;
+    int location = 0;
+    for (int i = 0; i < allIndustries.size(); i++) {
+        if (preferredIndustry == allIndustries[i]) {
+            industry = i;
+            break;
+        }
+    }
+    for(int i = 0; i < allLocations.size(); i++) {
+        if (preferredLocation == allLocations[i]) {
+            location = i;
+            break;
+        }
+    }
+
+    int wkhrs = 0;
+    if(maxWeeklyHours > 0 && maxWeeklyHours <= 10) 
+        wkhrs = 1;
+    else if(maxWeeklyHours > 10 && maxWeeklyHours <= 20)
+         wkhrs = 2;
+     else if(maxWeeklyHours > 20 && maxWeeklyHours <= 30) 
+          wkhrs = 3;
+     else if(maxWeeklyHours > 30 && maxWeeklyHours <= 40) 
+          wkhrs = 4;
+
+    int p= 0;
+    int h = 0;
+    int r = 0;
+    if(preferRemote)
+        r = 1;
+    if(requirePaid)
+        p = 1;
+    if (preferHandsOn)
+        h = 1;
+     return (industry * 1000000) + (location * 100000) + maxExperience*10000 + wkhrs*1000 + (r * 100) + (p * 10) + h;
+}
+
 int Internship :: CalculateCategoryId() {
     int p= 0;
     int h = 0;
@@ -57,7 +117,7 @@ int Internship :: CalculateCategoryId() {
         p = 1;
     if (handsOn)
         h = 1;
-    return (this->industry * 100000) + (this->location * 10000) + this->yearsExperience*1000 + (r * 100) + (p * 10) + h;
+    return (this->industry * 1000000) + (this->location * 100000) + this->yearsExperience*10000 + this->weeklyHours*1000 + (r * 100) + (p * 10) + h;
 }
 
 
@@ -222,13 +282,13 @@ TreeNode* TangoTree::insert(TreeNode* node, Internship* intern, int depth) {
     return node;
 }
 
-TreeNode* TangoTree::remove(TreeNode* node, int CategoryId) {
+TreeNode* TangoTree::remove(TreeNode* node, std::string title, int CategoryId) {
     if (!node) return node;
 
     if (CategoryId < node->key) {
-        node->left = remove(node->left, CategoryId);
+        node->left = remove(node->left, title, CategoryId);
     } else if (CategoryId > node->key) {
-        node->right = remove(node->right, CategoryId);
+        node->right = remove(node->right, title , CategoryId);
     } else {
         // Found the node with the matching relevance score
         // If this is the last internship in this node, remove the node
@@ -256,10 +316,16 @@ TreeNode* TangoTree::remove(TreeNode* node, int CategoryId) {
             node->data = temp->data;
             
             // Delete the successor
-            node->right = remove(node->right, temp->key);
+            //! possible logical error
+            node->right = remove(node->right, title, CategoryId);
         } else {
-            // Remove just one internship (last one for simplicity)
-            node->data.pop_back();
+            // If there are multiple internships, just remove the one with the matching title
+            for (int i = 0; i < node->data.size(); ++i) {
+                if (node->data[i]->title == title) {
+                    node->data.erase(node->data.begin() + i);
+                    break;
+                }
+            }
         }
     }
 
@@ -493,7 +559,7 @@ std::vector<Internship*> TangoTree::search(int CategoryId) {
     return result; // Empty vector if not found
 }
 
-void TangoTree::deleteInternship(int CategoryId) {
+void TangoTree::deleteInternship(int CategoryId, std::string title) {
     if (!root) return;
     
     // First, update the preferred path for this deletion
@@ -503,7 +569,7 @@ void TangoTree::deleteInternship(int CategoryId) {
     root = splay(root, CategoryId);
     
     // Now remove the node
-    root = remove(root, CategoryId);
+    root = remove(root, title, CategoryId);
     
     // Update reference root
     referenceRoot = root;

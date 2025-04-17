@@ -1,0 +1,21 @@
+title,location,remote,paid,industry,yearsExperience,handsOn,weeklyHours
+Software Development Intern,Lahore,0,1,Tech,0,1,40
+Web Development Intern,Karachi,1,1,Tech,1,1,30
+Mobile App Development,Islamabad,0,1,Tech,2,1,40
+Data Science Intern,Lahore,1,1,Tech,1,1,40
+Cloud Computing Intern,Remote,1,1,Tech,2,1,20
+Investment Banking Intern,Karachi,0,1,Finance,2,0,40
+Financial Analysis Intern,Lahore,0,1,Finance,1,1,30
+Accounting Intern,Islamabad,1,1,Finance,0,0,20
+Healthcare Admin Intern,Lahore,0,1,Healthcare,0,0,30
+Medical Research Intern,Karachi,0,0,Healthcare,2,1,40
+Telemedicine Intern,Remote,1,1,Healthcare,1,1,20
+Digital Marketing Intern,Islamabad,1,1,Marketing,1,1,20
+SEO Specialist Intern,Karachi,1,0,Marketing,0,1,10
+Content Writing Intern,Lahore,1,0,Marketing,0,0,15
+Social Media Intern,Remote,1,1,Marketing,1,1,25
+Teaching Assistant Intern,Lahore,0,0,Education,0,1,20
+Educational Research Intern,Islamabad,0,1,Education,2,1,30
+Curriculum Development,Karachi,1,1,Education,1,0,15
+E-Learning Developer,Remote,1,1,Education,1,1,25
+Educational Psychology,Lahore,0,0,Education,2,0,40
