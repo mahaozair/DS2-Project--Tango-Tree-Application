@@ -7,6 +7,37 @@
 
 std::vector<std::string> allIndustries = {};
 std::vector<std::string> allLocations = {};
+
+
+
+// Function to print details of internships in a vector
+void printInternships(const std::vector<Internship*>& internships) {
+    if (internships.empty()) {
+        std::cout << "No matching internships found." << std::endl;
+        return;
+    }
+    
+    std::cout << "\n===== Internship Details =====" << std::endl;
+    int count = 1;
+    for (const Internship* intern : internships) {
+        std::cout << "\n[Internship " << count++ << "]" << std::endl;
+        std::cout << "Title: " << intern->title << std::endl;
+        std::cout << "Location: " << intern->allLocations[intern->location] << std::endl;
+        std::cout << "Industry: " << intern->allIndustries[intern->industry] << std::endl;
+        std::cout << "Remote: " << (intern->remote ? "Yes" : "No") << std::endl;
+        std::cout << "Paid: " << (intern->paid ? "Yes" : "No") << std::endl;
+        std::cout << "Experience Required: " << intern->yearsExperience << " years" << std::endl;
+        std::cout << "Hands-on: " << (intern->handsOn ? "Yes" : "No") << std::endl;
+        
+        // Convert weeklyHours back to actual hours (1-4 scale to 10-40 hours)
+        int actualHours = intern->weeklyHours * 10;
+        std::cout << "Weekly Hours: " << actualHours << std::endl;
+        std::cout << "Category ID: " << intern->CategoryId << std::endl;
+        std::cout << "----------------------------";
+    }
+    std::cout << std::endl;
+}
+
 // Function to read internships from a CSV file
 std::vector<Internship*> readInternshipsFromCSV(const std::string& filename, 
                                                 std::vector<std::string>& allIndustries, 
@@ -70,6 +101,7 @@ int main() {
     }
     
     std::cout << "Loaded " << internships.size() << " internships from CSV file." << std::endl;
+    std::cout << std::endl;
     
     // Initialize the TangoTree
     TangoTree tree;
@@ -79,24 +111,44 @@ int main() {
     
     // Print the tree structure
     // tree.printTree();
+    
+    
+    int industry = 0;
+    int location = 0;
+    int handsOn = 0;
+    int remote = 0;
+    int paid = 0;
+    int maxExperience = 0;
+    int maxWeeklyHours = 0;
+
     for(int i = 0; i < allIndustries.size(); i++) {
         std::cout << i << " " << allIndustries[i] << std::endl;
     }
-    
-    // Example: Search for a specific category ID
-    int categoryId = internships[0]->CategoryId;
-    std::cout << "\nSearching for CategoryId: " << categoryId << std::endl;
-    std::vector<Internship*> results = tree.search(categoryId);
-    
-    std::cout << "Found " << results.size() << " internships:" << std::endl;
-    for (Internship* intern : results) {
-        std::cout << "- " << intern->title << " (Industry: " << allIndustries[intern->industry] << ")" << std::endl;
+    std::cout << "Enter your preferred industry (0-" << allIndustries.size() - 1 << "): ";
+    std::cin >> industry;
+    for(int i = 0; i < allLocations.size(); i++) {
+        std::cout << i << " " << allLocations[i] << std::endl;
     }
+    std::cout << "Enter your preferred location (0-" << allLocations.size() - 1 << "): ";
+    std::cin >> location;
+    std::cout << "Enter your maximum experience (0-4): ";
+    std::cin >> maxExperience;
+    std::cout << "Enter your maximum weekly hours (10-40): ";
+    std::cin >> maxWeeklyHours;
+    std::cout << "Do you prefer remote internships? (1 for Yes, 0 for No): ";
+    std::cin >> remote;
+    std::cout << "Do you require paid internships? (1 for Yes, 0 for No): ";
+    std::cin >> paid;
+    std::cout << "Do you prefer hands-on internships? (1 for Yes, 0 for No): ";
+    std::cin >> handsOn;
+
+    UserPreferences userPref(remote, paid, allIndustries[industry], maxExperience, handsOn, maxWeeklyHours, allIndustries, allLocations, allLocations[location]);
+
+    std::vector<Internship*> result = tree.search(userPref.CategoryId);
+
+    printInternships(result);
+
+
+
     
-    // Clean up
-    for (Internship* intern : internships) {
-        delete intern;
-    }
-    
-    return 0;
 }

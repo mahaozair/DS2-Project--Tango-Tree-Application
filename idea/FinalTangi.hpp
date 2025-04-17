@@ -13,10 +13,10 @@ class UserPreferences {
     bool preferHandsOn;
     int maxWeeklyHours;
     std::string preferredLocation;
-    int CategoryId;
     std::vector<std::string> & allIndustries;
     std::vector<std::string> & allLocations;
     public:
+    int CategoryId;
     UserPreferences(bool remote , bool paid ,
                    std::string industry , int maxExp,
                    bool handsOn , int maxHrs , std::vector<std::string>&  allIndustries , std::vector<std::string>&  allLocations, std::string prefLoc);
