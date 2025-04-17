@@ -56,8 +56,13 @@ weeklyHours(weeklyHrs) {
 UserPreferences::UserPreferences(bool remote, bool paid,
     std::string industry, int maxExp,
     bool handsOn, int maxHrs, std::vector<std::string>& allIndustries, 
-    std::vector<std::string>& allLocations, std::string prefLoc)
-    : allIndustries(allIndustries),
+    std::vector<std::string>& allLocations, std::string prefLoc, bool hasPreferredRemote, bool hasPreferredPaid, bool hasPreferredIndustry, bool hasPreferredLocation, bool hasPreferredHandsOn, int searchRank)
+    : hasPreferredRemote(hasPreferredRemote), 
+      hasPreferredPaid(hasPreferredPaid), 
+      hasPreferredIndustry(hasPreferredIndustry), 
+      hasPreferredLocation(hasPreferredLocation), 
+      hasPreferredHandsOn(hasPreferredHandsOn),
+      allIndustries(allIndustries),
       allLocations(allLocations),
       preferRemote(remote), 
       requirePaid(paid), 
@@ -65,8 +70,74 @@ UserPreferences::UserPreferences(bool remote, bool paid,
       maxExperience(maxExp),
       preferHandsOn(handsOn), 
       maxWeeklyHours(maxHrs),
-      preferredLocation(prefLoc) {
-    CategoryId = CalculateCategoryId();
+      preferredLocation(prefLoc),
+      SearchRank(searchRank) {
+      
+        // Store original values to restore later
+        std::string origIndustry = preferredIndustry;
+        std::string origLocation = preferredLocation;
+        bool origRemote = preferRemote;
+        bool origPaid = requirePaid;
+        bool origHandsOn = preferHandsOn;
+        
+        std::vector<int> catIds;
+        
+        int MAX_COMBINATIONS = searchRank; // Set a reasonable limit
+        int combinationCount = 0;
+        
+        // Always use the full combinatorial approach with a limit
+        // Generate all combinations using nested loops for each flexible preference
+        for (int i = 0; i < (hasPreferredIndustry ? 1 : allIndustries.size()); i++) {
+            // Set industry if flexible
+            if (!hasPreferredIndustry) 
+                preferredIndustry = allIndustries[i];
+            
+            for (int j = 0; j < (hasPreferredLocation ? 1 : allLocations.size()); j++) {
+                // Set location if flexible
+                if (!hasPreferredLocation)
+                    preferredLocation = allLocations[j];
+                
+                for (int r = 0; r < (hasPreferredRemote ? 1 : 2); r++) {
+                    // Set remote preference if flexible
+                    if (!hasPreferredRemote)
+                        preferRemote = (r == 1);
+                    
+                    for (int p = 0; p < (hasPreferredPaid ? 1 : 2); p++) {
+                        // Set paid preference if flexible
+                        if (!hasPreferredPaid)
+                            requirePaid = (p == 1);
+                        
+                        for (int h = 0; h < (hasPreferredHandsOn ? 1 : 2); h++) {
+                            // Set hands-on preference if flexible
+                            if (!hasPreferredHandsOn)
+                                preferHandsOn = (h == 1);
+                            
+                            // Calculate and store CategoryId for this combination
+                            catIds.push_back(CalculateCategoryId());
+                            
+                            // Check if we've reached our limit
+                            if (++combinationCount >= MAX_COMBINATIONS) {
+                                goto done_generating; // Break out of all loops
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        done_generating:
+        // Restore original preferences
+        preferredIndustry = origIndustry;
+        preferredLocation = origLocation;
+        preferRemote = origRemote;
+        requirePaid = origPaid;
+        preferHandsOn = origHandsOn;
+        
+        CategoryId = catIds;
+    }
+
+void UserPreferences::insertCategoryId(int catId) {
+    CategoryId.push_back(catId);
 }
 
 int UserPreferences :: CalculateCategoryId() {

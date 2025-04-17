@@ -7,19 +7,26 @@
 class UserPreferences {
     private:
     bool preferRemote;
+    bool hasPreferredRemote;
+    bool hasPreferredPaid;
+    bool hasPreferredIndustry;
+    bool hasPreferredLocation;
+    bool hasPreferredHandsOn;
     bool requirePaid;
     std::string preferredIndustry;
     int maxExperience;
     bool preferHandsOn;
     int maxWeeklyHours;
+    int SearchRank;
     std::string preferredLocation;
     std::vector<std::string> & allIndustries;
     std::vector<std::string> & allLocations;
     public:
-    int CategoryId;
+    std::vector <int> CategoryId;
+    void insertCategoryId(int catId);
     UserPreferences(bool remote , bool paid ,
                    std::string industry , int maxExp,
-                   bool handsOn , int maxHrs , std::vector<std::string>&  allIndustries , std::vector<std::string>&  allLocations, std::string prefLoc);
+                   bool handsOn , int maxHrs , std::vector<std::string>&  allIndustries , std::vector<std::string>&  allLocations, std::string prefLoc, bool hasPreferredRemote, bool hasPreferredPaid, bool hasPreferredIndustry, bool hasPreferredLocation, bool hasPreferredHandsOn, int SearchRank);
         
     int CalculateCategoryId();
 };

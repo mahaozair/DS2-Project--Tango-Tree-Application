@@ -112,7 +112,7 @@ int main() {
     // Print the tree structure
     // tree.printTree();
     
-    
+    int rank = 10;
     int industry = 0;
     int location = 0;
     int handsOn = 0;
@@ -120,31 +120,78 @@ int main() {
     int paid = 0;
     int maxExperience = 0;
     int maxWeeklyHours = 0;
+    bool hasprefindustry = false;
+    bool haspreflocation = false;
+    bool hasprefremote = false;
+    bool hasprefpaid = false;
+    bool hasprefhandsOn = false;
 
     for(int i = 0; i < allIndustries.size(); i++) {
         std::cout << i << " " << allIndustries[i] << std::endl;
     }
-    std::cout << "Enter your preferred industry (0-" << allIndustries.size() - 1 << "): ";
+    std::cout << allIndustries.size() << " " << "any" << std::endl;
+
+    std::cout << "Enter your preferred industry (0-" << allIndustries.size() << "): ";
     std::cin >> industry;
+    if(industry == allIndustries.size()) {
+        hasprefindustry = true;
+    } else {
+        hasprefindustry = false;
+    }
     for(int i = 0; i < allLocations.size(); i++) {
         std::cout << i << " " << allLocations[i] << std::endl;
     }
-    std::cout << "Enter your preferred location (0-" << allLocations.size() - 1 << "): ";
+    std::cout << allLocations.size() << " " << "any" << std::endl;
+    std::cout << "Enter your preferred location (0-" << allLocations.size() << "): ";
     std::cin >> location;
+    if(location == allLocations.size()) {
+        haspreflocation = true;
+    } else {
+        haspreflocation = false;
+    }
     std::cout << "Enter your maximum experience (0-4): ";
     std::cin >> maxExperience;
-    std::cout << "Enter your maximum weekly hours (10-40): ";
+    std::cout << "Enter your maximum weekly hours in multiples of 10 (10-40): ";
     std::cin >> maxWeeklyHours;
-    std::cout << "Do you prefer remote internships? (1 for Yes, 0 for No): ";
-    std::cin >> remote;
-    std::cout << "Do you require paid internships? (1 for Yes, 0 for No): ";
-    std::cin >> paid;
-    std::cout << "Do you prefer hands-on internships? (1 for Yes, 0 for No): ";
-    std::cin >> handsOn;
+    std::cout << "Do you have a preferrence regarding remote or on-site internships? (1 for Yes, 0 for No): ";
+    std::cin >> hasprefremote;
+    if(hasprefremote) {
+        std::cout << "Do you prefer remote internships? (1 for Yes, 0 for No): ";
+        std::cin >> remote;
+    } else {
+        remote = 0;
+    }
+    std::cout << "Do you have a preferrence regarding paid or unpaid internships? (1 for Yes, 0 for No): ";
+    std::cin >> hasprefpaid;
+    if(hasprefpaid) {
+        std::cout << "Do you prefer paid internships? (1 for Yes, 0 for No): ";
+        std::cin >> paid;
+    } else {
+        paid = 0;
+    }
+    std::cout << "Do you have a preferrence regarding hands-on or research-based internships? (1 for Yes, 0 for No): ";
+    std::cin >> hasprefhandsOn;
+    if(hasprefhandsOn) {
+        std::cout << "Do you prefer hands-on internships? (1 for Yes, 0 for No): ";
+        std::cin >> handsOn;
+    } else {
+        handsOn = 0;
+    }
+    std::cout << "How many most relevant internships do you want to see? : ";
+    std::cin >> rank;
+    if(rank > internships.size()) {
+        rank = internships.size();
+    }
+    if(rank < 0) {
+        rank = 0;
+    }
 
-    UserPreferences userPref(remote, paid, allIndustries[industry], maxExperience, handsOn, maxWeeklyHours, allIndustries, allLocations, allLocations[location]);
+    UserPreferences userPref(remote, paid, allIndustries[industry], maxExperience, handsOn, maxWeeklyHours, allIndustries, allLocations, allLocations[location], hasprefremote, hasprefpaid, hasprefindustry, haspreflocation, hasprefhandsOn, rank);
 
-    std::vector<Internship*> result = tree.search(userPref.CategoryId);
+    std::vector<Internship*> result;
+    for(int i = 0; i < userPref.CategoryId.size(); i++) {
+        result.insert(result.end(), tree.search(userPref.CategoryId[i]).begin(), tree.search(userPref.CategoryId[i]).end());
+    }
 
     printInternships(result);
 
