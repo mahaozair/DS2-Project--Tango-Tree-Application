@@ -82,10 +82,17 @@ UserPreferences::UserPreferences(bool remote, bool paid,
         
         std::vector<int> catIds;
         
-        int MAX_COMBINATIONS = searchRank; // Set a reasonable limit
+        // Set a more reasonable limit for combinations
+        int MAX_COMBINATIONS = std::max(searchRank * 10, 100); // Ensure we generate enough combinations
         int combinationCount = 0;
         
-        // Always use the full combinatorial approach with a limit
+        std::cout << "Generating category IDs with the following settings:" << std::endl;
+        std::cout << "Industry flexible: " << (!hasPreferredIndustry ? "Yes" : "No") << std::endl;
+        std::cout << "Location flexible: " << (!hasPreferredLocation ? "Yes" : "No") << std::endl;
+        std::cout << "Remote flexible: " << (!hasPreferredRemote ? "Yes" : "No") << std::endl;
+        std::cout << "Paid flexible: " << (!hasPreferredPaid ? "Yes" : "No") << std::endl;
+        std::cout << "Hands-on flexible: " << (!hasPreferredHandsOn ? "Yes" : "No") << std::endl;
+        
         // Generate all combinations using nested loops for each flexible preference
         for (int i = 0; i < (hasPreferredIndustry ? 1 : allIndustries.size()); i++) {
             // Set industry if flexible
@@ -113,10 +120,17 @@ UserPreferences::UserPreferences(bool remote, bool paid,
                                 preferHandsOn = (h == 1);
                             
                             // Calculate and store CategoryId for this combination
-                            catIds.push_back(CalculateCategoryId());
+                            int catId = CalculateCategoryId();
+                            
+                            // Only add unique category IDs
+                            if (std::find(catIds.begin(), catIds.end(), catId) == catIds.end()) {
+                                catIds.push_back(catId);
+                                std::cout << "Generated CategoryId: " << catId << std::endl;
+                            }
                             
                             // Check if we've reached our limit
                             if (++combinationCount >= MAX_COMBINATIONS) {
+                                std::cout << "Reached maximum combinations (" << MAX_COMBINATIONS << ")" << std::endl;
                                 goto done_generating; // Break out of all loops
                             }
                         }
@@ -133,7 +147,23 @@ UserPreferences::UserPreferences(bool remote, bool paid,
         requirePaid = origPaid;
         preferHandsOn = origHandsOn;
         
-        CategoryId = catIds;
+        std::cout << "Total unique CategoryIds generated: " << catIds.size() << std::endl;
+        
+        CategoryId = catIds; // Replace with assignment to avoid potential duplication
+        
+        std::cout << "CategoryIds stored in object: " << CategoryId.size() << std::endl;
+        
+        // Print all generated IDs for verification
+        if (!CategoryId.empty()) {
+            std::cout << "Generated CategoryIds: ";
+            for (size_t i = 0; i < CategoryId.size(); i++) {
+                std::cout << CategoryId[i];
+                if (i < CategoryId.size() - 1) std::cout << ", ";
+            }
+            std::cout << std::endl;
+        } else {
+            std::cout << "WARNING: No CategoryIds were generated!" << std::endl;
+        }
     }
 
 void UserPreferences::insertCategoryId(int catId) {
@@ -195,7 +225,18 @@ int Internship :: CalculateCategoryId() {
 TangoTree::TangoTree() : referenceRoot(nullptr), root(nullptr) {}
 
 TangoTree::~TangoTree() {
+    // First clear all auxiliary trees
+    for (auto& pair : auxTrees) {
+        clearAuxTree(pair.second);
+    }
+    auxTrees.clear();
+    
+    // Then clear the main tree
     clearTree(referenceRoot);
+    
+    // Reset pointers
+    referenceRoot = nullptr;
+    root = nullptr;
 }
 
 int TangoTree::height(TreeNode* node) {
@@ -388,7 +429,7 @@ TreeNode* TangoTree::remove(TreeNode* node, std::string title, int CategoryId) {
             
             // Delete the successor
             //! possible logical error
-            node->right = remove(node->right, title, CategoryId);
+            node->right = remove(node->right, temp->data[0]->title, temp->key);
         } else {
             // If there are multiple internships, just remove the one with the matching title
             for (int i = 0; i < node->data.size(); ++i) {

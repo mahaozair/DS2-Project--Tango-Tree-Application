@@ -16,7 +16,7 @@ void printInternships(const std::vector<Internship*>& internships) {
         std::cout << "No matching internships found." << std::endl;
         return;
     }
-    
+    for (int i = 0; i < internships.size(); i++){
     std::cout << "\n===== Internship Details =====" << std::endl;
     int count = 1;
     for (const Internship* intern : internships) {
@@ -36,6 +36,7 @@ void printInternships(const std::vector<Internship*>& internships) {
         std::cout << "----------------------------";
     }
     std::cout << std::endl;
+}
 }
 
 // Function to read internships from a CSV file
@@ -89,9 +90,15 @@ std::vector<Internship*> readInternshipsFromCSV(const std::string& filename,
     return internships;
 }
 
+void cleanupInternships(const std::vector<Internship*>& internships) {
+    for (Internship* intern : internships) {
+        delete intern;
+    }
+}
+
 int main() {
     // Read internships from CSV file
-    std::string csvFilename = "C:\\Users\\haris\\project_ds2\\DS2-Project--Tango-Tree-Application\\idea\\internship.csv";
+    std::string csvFilename = "internship.csv";
     std::vector<Internship*> internships = readInternshipsFromCSV(csvFilename, allIndustries, allLocations);
     
     // Check if internships were loaded successfully
@@ -186,16 +193,32 @@ int main() {
         rank = 0;
     }
 
-    UserPreferences userPref(remote, paid, allIndustries[industry], maxExperience, handsOn, maxWeeklyHours, allIndustries, allLocations, allLocations[location], hasprefremote, hasprefpaid, hasprefindustry, haspreflocation, hasprefhandsOn, rank);
+    UserPreferences userPref(remote, paid, 
+        industry < allIndustries.size() ? allIndustries[industry] : "any", 
+        maxExperience, handsOn, maxWeeklyHours, 
+        allIndustries, allLocations, 
+        location < allLocations.size() ? allLocations[location] : "any", 
+        hasprefremote, hasprefpaid, hasprefindustry, haspreflocation, hasprefhandsOn, rank);
 
-    std::vector<Internship*> result;
+
+    std::cout << " Rank : " << rank << std::endl;
+    // Create result vector with COPIES of the pointers, not the originals
+    std::vector<Internship*> searchResults;
     for(int i = 0; i < userPref.CategoryId.size(); i++) {
-        result.insert(result.end(), tree.search(userPref.CategoryId[i]).begin(), tree.search(userPref.CategoryId[i]).end());
+        auto matches = tree.search(userPref.CategoryId[i]);
+        for(int j = 0; j < matches.size(); j++){
+            searchResults.push_back(matches[j]);
+        }
     }
 
-    printInternships(result);
+    std::cout << "Size of Search Results : " << searchResults.size() << std::endl; 
 
 
+    printInternships(searchResults);
+
+    cleanupInternships(internships);
+
+    return 0;
 
     
 }
