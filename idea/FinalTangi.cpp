@@ -83,7 +83,7 @@ UserPreferences::UserPreferences(bool remote, bool paid,
         std::vector<int> catIds;
         
         // Set a more reasonable limit for combinations
-        int MAX_COMBINATIONS = std::max(searchRank * 10, 100); // Ensure we generate enough combinations
+        int MAX_COMBINATIONS = std::max(searchRank, 1); // Ensure we generate enough combinations
         int combinationCount = 0;
         
         std::cout << "Generating category IDs with the following settings:" << std::endl;
@@ -160,7 +160,7 @@ UserPreferences::UserPreferences(bool remote, bool paid,
                 std::cout << CategoryId[i];
                 if (i < CategoryId.size() - 1) std::cout << ", ";
             }
-            std::cout << std::endl;
+            std::cout << " ] "  << std::endl;
         } else {
             std::cout << "WARNING: No CategoryIds were generated!" << std::endl;
         }
@@ -175,26 +175,26 @@ int UserPreferences :: CalculateCategoryId() {
     int location = 0;
     for (int i = 0; i < allIndustries.size(); i++) {
         if (preferredIndustry == allIndustries[i]) {
-            industry = i;
+            industry = i+1;
             break;
         }
     }
     for(int i = 0; i < allLocations.size(); i++) {
         if (preferredLocation == allLocations[i]) {
-            location = i;
+            location = i+1;
             break;
         }
     }
 
-    int wkhrs = 0;
-    if(maxWeeklyHours > 0 && maxWeeklyHours <= 10) 
-        wkhrs = 1;
-    else if(maxWeeklyHours > 10 && maxWeeklyHours <= 20)
-         wkhrs = 2;
-     else if(maxWeeklyHours > 20 && maxWeeklyHours <= 30) 
-          wkhrs = 3;
-     else if(maxWeeklyHours > 30 && maxWeeklyHours <= 40) 
-          wkhrs = 4;
+    // int wkhrs = 0;
+    // if(maxWeeklyHours > 0 && maxWeeklyHours <= 10) 
+    //     wkhrs = 1;
+    // else if(maxWeeklyHours > 10 && maxWeeklyHours <= 20)
+    //      wkhrs = 2;
+    //  else if(maxWeeklyHours > 20 && maxWeeklyHours <= 30) 
+    //       wkhrs = 3;
+    //  else if(maxWeeklyHours > 30 && maxWeeklyHours <= 40) 
+    //       wkhrs = 4;
 
     int p= 0;
     int h = 0;
@@ -205,7 +205,7 @@ int UserPreferences :: CalculateCategoryId() {
         p = 1;
     if (preferHandsOn)
         h = 1;
-     return (industry * 1000000) + (location * 100000) + maxExperience*10000 + wkhrs*1000 + (r * 100) + (p * 10) + h;
+     return (industry *10000) + (location * 1000) + (r * 100) + (p * 10) + h;
 }
 
 int Internship :: CalculateCategoryId() {
@@ -218,7 +218,7 @@ int Internship :: CalculateCategoryId() {
         p = 1;
     if (handsOn)
         h = 1;
-    return (this->industry * 1000000) + (this->location * 100000) + this->yearsExperience*10000 + this->weeklyHours*1000 + (r * 100) + (p * 10) + h;
+    return ((this->industry+1) * 10000) + ((this->location+1) * 1000)  + (r * 100) + (p * 10) + h;
 }
 
 

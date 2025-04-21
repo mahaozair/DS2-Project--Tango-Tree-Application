@@ -98,7 +98,7 @@ void cleanupInternships(const std::vector<Internship*>& internships) {
 
 int main() {
     // Read internships from CSV file
-    std::string csvFilename = "internship.csv";
+    std::string csvFilename = "internships_test.csv";
     std::vector<Internship*> internships = readInternshipsFromCSV(csvFilename, allIndustries, allLocations);
     
     // Check if internships were loaded successfully
@@ -141,9 +141,9 @@ int main() {
     std::cout << "Enter your preferred industry (0-" << allIndustries.size() << "): ";
     std::cin >> industry;
     if(industry == allIndustries.size()) {
-        hasprefindustry = true;
-    } else {
         hasprefindustry = false;
+    } else {
+        hasprefindustry = true;
     }
     for(int i = 0; i < allLocations.size(); i++) {
         std::cout << i << " " << allLocations[i] << std::endl;
@@ -152,9 +152,9 @@ int main() {
     std::cout << "Enter your preferred location (0-" << allLocations.size() << "): ";
     std::cin >> location;
     if(location == allLocations.size()) {
-        haspreflocation = true;
-    } else {
         haspreflocation = false;
+    } else {
+        haspreflocation = true;
     }
     std::cout << "Enter your maximum experience (0-4): ";
     std::cin >> maxExperience;
@@ -206,8 +206,13 @@ int main() {
     std::vector<Internship*> searchResults;
     for(int i = 0; i < userPref.CategoryId.size(); i++) {
         auto matches = tree.search(userPref.CategoryId[i]);
+
+        std::cout << "CategoryId: " << userPref.CategoryId[i] << " found " << matches.size() << " matches" << std::endl;
+
         for(int j = 0; j < matches.size(); j++){
+            if(matches[j]->weeklyHours <= userPref.maxWeeklyHours && matches[j]->yearsExperience <= userPref.maxExperience) {
             searchResults.push_back(matches[j]);
+            }
         }
     }
 

@@ -14,14 +14,14 @@ class UserPreferences {
     bool hasPreferredHandsOn;
     bool requirePaid;
     std::string preferredIndustry;
-    int maxExperience;
     bool preferHandsOn;
-    int maxWeeklyHours;
     int SearchRank;
     std::string preferredLocation;
     std::vector<std::string> & allIndustries;
     std::vector<std::string> & allLocations;
     public:
+    int maxWeeklyHours;
+    int maxExperience;
     std::vector <int> CategoryId;
     void insertCategoryId(int catId);
     UserPreferences(bool remote , bool paid ,
