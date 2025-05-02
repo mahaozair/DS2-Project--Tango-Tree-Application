@@ -12,7 +12,7 @@ using namespace std;
 Internship :: Internship(std::string title, std::string location,
    bool remote, bool paid,
    std::string industry, int yearsExp,
-   bool handsOn, int weeklyHrs, std::vector<std::string>& allIndustries, std::vector<std::string>& allLocations)
+   bool handsOn, int weeklyHrs, std::vector<std::string>& allIndustries, std::vector<std::string>& allLocations, std::string description, std::string link)
 : allIndustries(allIndustries),
 allLocations(allLocations),
 title(title), 
@@ -20,7 +20,9 @@ remote(remote),
 paid(paid), 
 yearsExperience(yearsExp), 
 handsOn(handsOn),
-weeklyHours(weeklyHrs) {
+weeklyHours(weeklyHrs),
+description(description),
+link(link) {
 
    if(weeklyHrs > 0 && weeklyHrs <= 10) 
        this->weeklyHours = 1;

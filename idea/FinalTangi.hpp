@@ -43,6 +43,8 @@ class Internship {
     int yearsExperience;
     bool handsOn;
     int weeklyHours;
+    std::string description;
+    std::string link;
     std::vector<std::string>& allIndustries;
     std::vector<std::string>& allLocations;
     
@@ -50,7 +52,7 @@ class Internship {
         Internship(std::string title, std::string location,
                    bool remote, bool paid,
                    std::string industry, int yearsExp ,
-                   bool handsOn, int weeklyHrs, std::vector<std::string>&  allIndustries, std::vector<std::string>&  allLocations);
+                   bool handsOn, int weeklyHrs, std::vector<std::string>&  allIndustries, std::vector<std::string>&  allLocations, std::string description, std::string link) ;
            
     };
 

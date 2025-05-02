@@ -22,6 +22,8 @@ void printInternships(const std::vector<Internship*>& internships) {
     for (const Internship* intern : internships) {
         std::cout << "\n[Internship " << count++ << "]" << std::endl;
         std::cout << "Title: " << intern->title << std::endl;
+        std::cout << "Description: " << intern->description << std::endl;
+        std::cout << "Link: " << intern->link << std::endl;
         std::cout << "Location: " << intern->allLocations[intern->location] << std::endl;
         std::cout << "Industry: " << intern->allIndustries[intern->industry] << std::endl;
         std::cout << "Remote: " << (intern->remote ? "Yes" : "No") << std::endl;
@@ -60,7 +62,7 @@ std::vector<Internship*> readInternshipsFromCSV(const std::string& filename,
     while (std::getline(file, line)) {
         std::stringstream ss(line);
         std::string title, location, industry;
-        std::string remoteStr, paidStr, yearsExpStr, handsOnStr, weeklyHrsStr;
+        std::string remoteStr, paidStr, yearsExpStr, handsOnStr, weeklyHrsStr, description, link;
         
         // Parse CSV line
         std::getline(ss, title, ',');
@@ -71,6 +73,8 @@ std::vector<Internship*> readInternshipsFromCSV(const std::string& filename,
         std::getline(ss, yearsExpStr, ',');
         std::getline(ss, handsOnStr, ',');
         std::getline(ss, weeklyHrsStr, ',');
+        std::getline(ss, description, ',');
+        std::getline(ss, link, ',');
         
         // Convert string values to appropriate types
         bool remote = (remoteStr == "1" || remoteStr == "true");
@@ -82,7 +86,7 @@ std::vector<Internship*> readInternshipsFromCSV(const std::string& filename,
         // Create and add the internship
         Internship* intern = new Internship(title, location, remote, paid, industry, 
                                            yearsExp, handsOn, weeklyHrs, 
-                                           allIndustries, allLocations);
+                                           allIndustries, allLocations, description ,link);
         internships.push_back(intern);
     }
     
