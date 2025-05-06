@@ -9,11 +9,12 @@
 using namespace std;
 
 
-Internship :: Internship(std::string title, std::string location,
+Internship :: Internship(std::string title,std::string firm, std::string location,
    bool remote, bool paid,
    std::string industry, int yearsExp,
    bool handsOn, int weeklyHrs, std::vector<std::string>& allIndustries, std::vector<std::string>& allLocations, std::string description, std::string link)
 : allIndustries(allIndustries),
+firm(firm),
 allLocations(allLocations),
 title(title), 
 remote(remote), 

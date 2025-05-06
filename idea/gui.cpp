@@ -25,10 +25,10 @@ void OpenLinkWithoutConsole(const std::string &url)
 }
 #endif
 #define STB_TEXT_HAS_SELECTION
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h>
+#include "../imgui/imgui.h"
+#include "../imgui/backends/imgui_impl_opengl3.h"
+#include "../imgui/backends/imgui_impl_glfw.h"
+#include "../glfw-3.4.bin.WIN64/include/GLFW/glfw3.h"
 #include <vector>
 #include <algorithm>
 #include <iostream>
@@ -98,10 +98,11 @@ std::vector<Internship *> readInternshipsFromCSV(const std::string &filename,
     while (std::getline(file, line))
     {
         std::stringstream ss(line);
-        std::string title, location, industry;
+        std::string title, firm, location, industry;
         std::string remoteStr, paidStr, yearsExpStr, handsOnStr, weeklyHrsStr, description, link;
 
         std::getline(ss, title, ',');
+        std::getline(ss, firm, ',');
         std::getline(ss, location, ',');
         std::getline(ss, remoteStr, ',');
         std::getline(ss, paidStr, ',');
@@ -118,7 +119,7 @@ std::vector<Internship *> readInternshipsFromCSV(const std::string &filename,
         bool handsOn = (handsOnStr == "1" || handsOnStr == "true");
         int weeklyHrs = std::stoi(weeklyHrsStr);
 
-        Internship *intern = new Internship(title, location, remote, paid, industry,
+        Internship *intern = new Internship(title, firm, location, remote, paid, industry,
                                             yearsExp, handsOn, weeklyHrs,
                                             allIndustries, allLocations, description, link);
         internships.push_back(intern);
@@ -287,6 +288,7 @@ void ShowDetailsWindow()
         ImGui::Separator();
 
         ImGui::TextWrapped("Description: %s", intern->description.c_str());
+        ImGui::TextWrapped("Firm: %s", intern->firm.c_str());
         ImGui::Text("Location: %s", allLocations[intern->location].c_str());
         ImGui::Text("Industry: %s", allIndustries[intern->industry].c_str());
         ImGui::Text("Remote: %s", intern->remote ? "Yes" : "No");

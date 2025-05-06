@@ -35,6 +35,7 @@ class Internship {
     public:
     int CategoryId;
     std::string title;
+    std::string firm;
     int location;
     // std::vector<std::string> requiredSkills;
     bool remote;
@@ -49,7 +50,7 @@ class Internship {
     std::vector<std::string>& allLocations;
     
         int CalculateCategoryId();
-        Internship(std::string title, std::string location,
+        Internship(std::string title, std::string firm, std::string location,
                    bool remote, bool paid,
                    std::string industry, int yearsExp ,
                    bool handsOn, int weeklyHrs, std::vector<std::string>&  allIndustries, std::vector<std::string>&  allLocations, std::string description, std::string link) ;
