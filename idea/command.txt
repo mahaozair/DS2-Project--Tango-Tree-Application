@@ -13,3 +13,19 @@ g++ gui.cpp FinalTangi.cpp `
  -lglfw3dll -lgdi32 -lopengl32 -mwindows -std=c++17 -o internship_gui.exe -mwindows
 use this to execute:
 ./internship_gui.exe
+
+--------------------------------------------------------------------------------------------------------------
+
+g++ gui.cpp FinalTangi.cpp `
+>> "..\imgui\imgui.cpp" `
+>> "..\imgui\imgui_draw.cpp" `
+>> "..\imgui\imgui_widgets.cpp" `
+>> "..\imgui\imgui_tables.cpp" `
+>> "..\imgui\backends\imgui_impl_glfw.cpp" `
+>> "..\imgui\backends\imgui_impl_opengl3.cpp" `
+>> -I"..\imgui" `
+>> -I"..\imgui\backends" `
+>> -I"..\glfw-3.4.bin.WIN64\include" `
+>> -L"..\glfw-3.4.bin.WIN64\lib-mingw-w64" `
+>> -lglfw3dll -lgdi32 -lopengl32 -std=c++17 -o internship_gui.exe -mwindows
+>> 
